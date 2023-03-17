@@ -3,30 +3,63 @@ from pprint import pprint
 
 def create_db(file_name):
     with sq.connect(file_name) as file: # id INTEGER PRIMARY KEY AUTOINCREMENT,
-        file.cursor().execute("""CREATE TABLE IF NOT EXISTS people(
+        cur = file.cursor()
+        cur.execute("""CREATE TABLE IF NOT EXISTS people(
                                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                                 name TEXT NOT NULL,
                                 country TEXT,
                                 age INTEGER
                                 )""")
-        file.commit()
+    
+
+def drop_table_in_file(file_name):
+    with sq.connect(file_name) as file: # id INTEGER PRIMARY KEY AUTOINCREMENT,
+        cur = file.cursor()
+        cur.execute("DROP TABLE IF EXISTS people")
+
+
 
 def write_in_file(file_name, lst):
     with sq.connect(file_name) as file:
-        # for i in lst:
-            # print(i)
-        file.cursor().executemany("""INSERT INTO people
+        cur = file.cursor()
+        cur.executemany("""INSERT INTO people
                                     (name, country, age)
                                     VALUES (:name, :country, :age)"""
                                   , lst)
 
-            
 
-def read_from_file(file_name):
+
+def read_from_file(file_name, **kwargs):
+    kwargs = dict(filter(lambda x: x[0] in COLUMNS_NAME, kwargs.items()))
     with sq.connect(file_name) as file:
-        file.cursor().execute("SELECT * FROM people")
-        return file.cursor().fetchall()
-            
+        cur = file.cursor()
+        query = "SELECT id, name, country, age FROM people"
+        if kwargs:
+            query += " WHERE " + " AND ".join(f"{k} = '{v}'" for k, v in kwargs.items())
+        query += " ORDER BY country, age"
+        cur.execute(query)
+        return cur.fetchall()
+
+
+def update_from_file_by_id(file_name, id, **kwargs):
+    with sq.connect(file_name) as file:
+        cur = file.cursor()
+        query = "UPDATE people SET " + ", ".join(f"{k} = '{v}'" for k, v in kwargs.items())
+        # query += " WHERE " + " AND ".join(f"{k} = '{v}'" for k, v in where.items())
+        query += f" WHERE id = {id}"
+        # тут могут быть ошибки, если пользователь ввел не существующие колонки
+        cur.execute(query) 
+        
+
+def delete_from_file(file_name, **kwargs):
+    with sq.connect(file_name) as file:
+        cur = file.cursor()
+        query = "DELETE FROM people WHERE " + " AND ".join(f"{k} = '{v}'" for k, v in kwargs.items())
+        # тут могут быть ошибки, если пользователь ввел не существующие колонки
+        cur.execute(query)
+
+
+COLUMNS_NAME = ['id', 'name', 'country', 'age']
 FILE_NAME = "task_49.db"
 people = [{"name": "Haley Whitney", "country": "British Indian Ocean Territory (Chagos Archipelago)", "age": 54}, 
  {"name": "Matthew King", "country": "Colombia", "age": 34}, 
@@ -129,13 +162,13 @@ people = [{"name": "Haley Whitney", "country": "British Indian Ocean Territory (
  {"name": "Peggy Bryant", "country": "Korea", "age": 36}, 
  {"name": "Erik Mclaughlin", "country": "Austria", "age": 24}]
 
+
+drop_table_in_file(FILE_NAME)
 create_db(FILE_NAME)
 write_in_file(FILE_NAME, people)
 pprint(read_from_file(FILE_NAME))
-
-
-
-
-
-
-        
+# pprint(read_from_file(FILE_NAME, age = 66))
+# update_from_file_by_id(FILE_NAME, 67, country = "Namibia")
+# pprint(read_from_file(FILE_NAME, age = 67))
+# delete_from_file(FILE_NAME, id = 67)
+# pprint(read_from_file(FILE_NAME, age = 67))

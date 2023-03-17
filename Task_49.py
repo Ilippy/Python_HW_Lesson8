@@ -19,7 +19,7 @@ from pprint import pprint
 def write_in_file(file_name: str, lst: list[dict], open_file_method: str = "w"):
     with open(file_name, open_file_method, encoding="utf-8") as file:
         for man in sorted(lst, key= lambda x: (x['age'], x['name'])):
-            file.write(f"{man['name']}, {man['country']}, {man['age']}\n")
+            file.write(", ".join(man) + "\n")
 
 
 def read_from_file(file_name):
@@ -146,4 +146,4 @@ people = [{"name": "Haley Whitney", "country": "British Indian Ocean Territory (
 
 # write_in_file(FILE_NAME, people)
 read_from_file(FILE_NAME)
-pprint(find_from_file(FILE_NAME, country = "Russian Federation"))
+pprint(find_from_file(FILE_NAME, country = "Russian Federation", test = 123))
